@@ -696,32 +696,6 @@ func generatePublicKey(G Matrix, x []byte) Matrix {
 	return matExp(G, x)
 }
 
-// Encrypt message matrix M using public key
-func encrypt(pub PublicKey, M Matrix) (Matrix, Matrix, error) {
-	k, err := generatePrivateKey()
-	if err != nil {
-		return Matrix{}, Matrix{}, err
-	}
-
-	C1 := matExp(pub.G, k) // C1 = G^k
-	s := matExp(pub.Y, k)  // s = Y^k
-	C2 := mul(M, s)        // C2 = M * s
-	return C1, C2, nil
-}
-
-// Decrypt using private key x
-func decrypt(priv PrivateKey, C1, C2 Matrix) (Matrix, error) {
-	s := matExp(C1, priv.X)
-
-	sInv, err := inverseMatrix(s)
-	if err != nil {
-		return Matrix{}, err
-	}
-
-	M := mul(C2, sInv)
-	return M, nil
-}
-
 // Calculate matrix inverse in GL(16, F251) using Gauss-Jordan elimination
 func inverseMatrix(m Matrix) (Matrix, error) {
 	var augmented [16][32]int
