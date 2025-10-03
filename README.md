@@ -224,6 +224,125 @@ This matrix-based ZKP provides a robust and post-quantum secure method for provi
 | Quantum resistance | Vulnerable | Resistant |
 | Group structure | Abelian | Non-abelian |
 
+## Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	matrixcrypto "github.com/pedroalbanese/matrixgl"
+)
+
+func main() {
+	fmt.Println("=== MATRIX CRYPTO LIBRARY DEMONSTRATION ===")
+
+	mc := matrixcrypto.New()
+
+	// 1. Key Generation
+	fmt.Println("\n1. Generating key pair...")
+	keyPair, err := mc.GenerateKeyPair()
+	if err != nil {
+		log.Fatal("Error generating key pair:", err)
+	}
+	fmt.Println("   Key pair generated successfully")
+	fmt.Printf("   Private key size: %d bytes\n", len(keyPair.PrivateKey.X))
+	fmt.Printf("   Public key G size: %d bytes\n", len(keyPair.PublicKey.G))
+	fmt.Printf("   Public key Y size: %d bytes\n", len(keyPair.PublicKey.Y))
+
+	// 2. Encryption
+	fmt.Println("\n2. Encrypting random message...")
+	message := mc.GenerateRandomMessage()
+	fmt.Printf("   Original message hash: %s\n", mc.MatrixToHex(message)[:32]+"...")
+
+	ciphertext, err := mc.Encrypt(keyPair.PublicKey, message)
+	if err != nil {
+		log.Fatal("Error encrypting message:", err)
+	}
+	fmt.Println("   Message encrypted successfully")
+	fmt.Printf("   Ciphertext C1 size: %d bytes\n", len(ciphertext.C1))
+	fmt.Printf("   Ciphertext C2 size: %d bytes\n", len(ciphertext.C2))
+
+	// 3. Digital Signatures
+	fmt.Println("\n3. Signing confidential data...")
+	data := []byte("Confidential data to be signed digitally using matrix cryptography")
+	fmt.Printf("   Data to sign: %s\n", string(data))
+	fmt.Printf("   Data size: %d bytes\n", len(data))
+
+	signature, err := mc.Sign(keyPair.PrivateKey, data)
+	if err != nil {
+		log.Fatal("Error signing data:", err)
+	}
+	fmt.Println("   Data signed successfully")
+	fmt.Printf("   Signature size: %d bytes\n", len(signature))
+
+	// 4. Verifications
+	fmt.Println("\n4. Performing cryptographic verifications...")
+
+	// Decryption verification
+	decryptedMessage, err := mc.Decrypt(keyPair.PrivateKey, ciphertext)
+	if err != nil {
+		log.Fatal("Error decrypting message:", err)
+	}
+
+	encryptionOK := mc.MatrixToHex(message) == mc.MatrixToHex(decryptedMessage)
+	fmt.Printf("   Decryption verification: %t\n", encryptionOK)
+	fmt.Printf("   Decrypted message hash: %s\n", mc.MatrixToHex(decryptedMessage)[:32]+"...")
+
+	// Signature verification
+	signatureOK, err := mc.Verify(keyPair.PublicKey, data, signature)
+	if err != nil {
+		log.Fatal("Error verifying signature:", err)
+	}
+	fmt.Printf("   Signature verification: %t\n", signatureOK)
+
+	// 5. Additional security tests
+	fmt.Println("\n5. Running additional security tests...")
+
+	// Test with wrong signature (should fail)
+	wrongData := []byte("Wrong data that should fail verification")
+	wrongSignatureOK, _ := mc.Verify(keyPair.PublicKey, wrongData, signature)
+	fmt.Printf("   Wrong data test (should be false): %t\n", wrongSignatureOK)
+
+	// Test PEM serialization
+	fmt.Println("\n6. Testing PEM serialization...")
+	privPEM, err := mc.PrivateKeyToPEM(keyPair.PrivateKey)
+	if err != nil {
+		log.Fatal("Error serializing private key to PEM:", err)
+	}
+
+	pubPEM, err := mc.PublicKeyToPEM(keyPair.PublicKey)
+	if err != nil {
+		log.Fatal("Error serializing public key to PEM:", err)
+	}
+
+	fmt.Printf("   Private PEM size: %d bytes\n", len(privPEM))
+	fmt.Printf("   Public PEM size: %d bytes\n", len(pubPEM))
+
+	// 7. Final results
+	fmt.Println("\n7. FINAL RESULTS:")
+	fmt.Printf("   Encryption/Decryption: %t\n", encryptionOK)
+	fmt.Printf("   Digital Signature: %t\n", signatureOK)
+	fmt.Printf("   Security Tests: %t\n", !wrongSignatureOK)
+
+	if encryptionOK && signatureOK && !wrongSignatureOK {
+		fmt.Println("\nALL TESTS PASSED SUCCESSFULLY!")
+		fmt.Println("Matrix cryptography library is working correctly.")
+	} else {
+		fmt.Println("\nSOME TESTS FAILED!")
+	}
+
+	fmt.Printf("\nLibrary implementation: Matrix GL(16, F251)\n")
+	fmt.Printf("Private key space: 2^256 possible keys\n")
+	fmt.Printf("Matrix operations: Over finite field F251\n")
+}
+```
+
+Go Playground:
+https://go.dev/play/p/egPrTzoTTiQ
+
 ## Contribute
 **Use issues for everything**
 - You can help and get help by:
