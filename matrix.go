@@ -18,7 +18,7 @@ import (
 	"golang.org/x/crypto/hkdf"
   
 	"github.com/pedroalbanese/lyra2rev2"
-  "github.com/pedroalbanese/randomart"
+	"github.com/pedroalbanese/randomart"
 )
 
 // =================================================
