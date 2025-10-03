@@ -1,5 +1,4 @@
 # Matrix-Based Cryptography (PoC)
-General Linear Group GL(16, F251)
 
 This article presents a description of the Schnorr digital signature scheme and the ElGamal cryptographic protocol implemented over the general linear group GL(16, $\mathbb{F}\_{251}$) of invertible 16×16 matrices over the finite field $\mathbb{F}\_{251}$. This scheme represents a promising candidate for post-quantum cryptography as it relies on mathematical problems believed to be resistant to quantum attacks, particularly the Generalized Symmetric Decomposition Problem (GSDP) in non-abelian matrix groups.
 
