@@ -1009,7 +1009,7 @@ func deserializeSchnorrSignature(data []byte) (Matrix, []byte, error) {
 // =============================================================================
 
 // GenerateZKProof generates a zero-knowledge proof of knowledge of the private key x
-func GenerateZKProof(G, Y Matrix, xBytes []byte, message []byte) (Matrix, []byte, []byte) {
+func GenerateZKProof(G Matrix, xBytes []byte, message []byte) (Matrix, []byte, []byte) {
 	groupOrder := glOrder(16, 251)
 
 	// Step 1: Generate random commitment k
@@ -1025,11 +1025,10 @@ func GenerateZKProof(G, Y Matrix, xBytes []byte, message []byte) (Matrix, []byte
 	R := matExp(G, kBytes)
 
 	// Step 3: Generate challenge e = H(G, Y, R, message)
-	challengeData := append(matrixToBytes(G), matrixToBytes(Y)...)
-	challengeData = append(challengeData, matrixToBytes(R)...)
+	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
 	challengeData = append(challengeData, message...)
 
-	e := hashToScalar(challengeData)
+	e := hashToScalarMatrix(challengeData)
 	e.Mod(e, groupOrder)
 
 	// Step 4: Compute response s = k + x*e (mod order)
@@ -1062,11 +1061,10 @@ func VerifyZKProof(R Matrix, eBytes, sBytes []byte, G, Y Matrix, message []byte)
 	groupOrder := glOrder(16, 251)
 
 	// Step 1: Recompute challenge e = H(G, Y, R, message)
-	challengeData := append(matrixToBytes(G), matrixToBytes(Y)...)
-	challengeData = append(challengeData, matrixToBytes(R)...)
+	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
 	challengeData = append(challengeData, message...)
 
-	e := hashToScalar(challengeData)
+	e := hashToScalarMatrix(challengeData)
 	e.Mod(e, groupOrder)
 
 	// Convert to bytes for comparison
@@ -1083,9 +1081,9 @@ func VerifyZKProof(R Matrix, eBytes, sBytes []byte, G, Y Matrix, message []byte)
 	}
 
 	// Step 2: Verify the proof: G^s = R * Y^e
-	Gs := matExp(G, sBytes) // Left side: G^s
-	Ye := matExp(Y, eBytes) // Y^e
-	rightSide := mul(R, Ye) // Right side: R * Y^e
+	Gs := matExp(G, sBytes)
+	Ye := matExp(Y, eBytes)
+	rightSide := mul(R, Ye)
 
 	return matricesEqual(Gs, rightSide)
 }
