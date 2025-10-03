@@ -1214,28 +1214,3 @@ func derivePrivateKeyFromSeed(seed []byte) []byte {
 	// Retornar os primeiros 32 bytes (256 bits)
 	return digest[:32]
 }
-
-// =================================================
-// Implementação das funções dependentes (placeholders)
-// =================================================
-
-// Estas funções precisam ser implementadas com as bibliotecas apropriadas
-
-func calculateFingerprint(keyBytes []byte) string {
-	// Implementação simplificada - usar hash real na implementação final
-	return hex.EncodeToString(keyBytes[:16])
-}
-
-// Placeholder para lyra2re2 - substituir pela implementação real
-func lyra2re2Sum(data []byte) ([]byte, error) {
-	// Implementação placeholder - usar biblioteca real
-	h := make([]byte, 64)
-	copy(h, data)
-	return h, nil
-}
-
-// Placeholder para randomart - substituir pela implementação real
-func generateRandomArt(data string) string {
-	// Implementação placeholder - usar biblioteca real
-	return "RandomArt placeholder for: " + data[:20]
-}
