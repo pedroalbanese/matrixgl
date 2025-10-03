@@ -190,6 +190,45 @@ func (mc *MatrixCrypto) ReadKeyFromPEM(filename string, isPrivate bool) ([]byte,
 // Criptografia/Descriptografia ElGamal
 // =================================================
 
+// Criptografa mensagem (matriz M) usando chave pública matricial
+func encryptMATRIX(pub PublicKeyMatrixASN1, M Matrix) (Matrix, Matrix, error) {
+	// Converter G e Y de []byte para Matrix
+	G, err := bytesToMatrix(pub.G)
+	if err != nil {
+		return Matrix{}, Matrix{}, fmt.Errorf("error convertingG: %v", err)
+	}
+	Y, err := bytesToMatrix(pub.Y)
+	if err != nil {
+		return Matrix{}, Matrix{}, fmt.Errorf("error convertingY: %v", err)
+	}
+
+	// k aleatório de 256 bits
+	k := make([]byte, 32)
+	_, err = rand.Read(k)
+	if err != nil {
+		return Matrix{}, Matrix{}, err
+	}
+
+	C1 := matExp(G, k)
+	s := matExp(Y, k)
+	C2 := mul(M, s)
+	return C1, C2, nil
+}
+
+// Decripta usando chave privada matricial
+func decryptMATRIX(priv PrivateKeyMatrixASN1, C1, C2 Matrix) (Matrix, error) {
+	// C1 já é Matrix, priv.X é []byte (chave privada)
+	s := matExp(C1, priv.X)
+
+	sInv, err := inverseMatrix(s)
+	if err != nil {
+		return Matrix{}, err
+	}
+
+	M := mul(C2, sInv)
+	return M, nil
+}
+
 // Encrypt criptografa uma mensagem usando ElGamal matricial
 func (mc *MatrixCrypto) Encrypt(pubKey *PublicKeyMatrixASN1, message Matrix) (*CiphertextMatrixASN1, error) {
 	C1, C2, err := encryptMATRIX(*pubKey, message)
@@ -1081,6 +1120,133 @@ func VerifyZKProof(R Matrix, eBytes, sBytes []byte, G, Y Matrix, message []byte)
 	rightSide := mul(R, Ye) // Right side: R * Y^e
 
 	return matricesEqual(Gs, rightSide)
+}
+
+// =================================================
+
+// GenerateDeterministicMatrix gera uma matriz G deterministicamente a partir de uma seed usando Lyra2RE2
+func generateDeterministicMatrix(seed []byte) Matrix {
+	seedHash, _ := lyra2re2.Sum(seed)
+
+	// Gerar polinômio irredutível deterministicamente
+	poly := generateDeterministicPolynomial(seedHash[:])
+
+	// Criar matriz companheira do polinômio
+	companion := companionMatrix(poly)
+
+	// Gerar matrizes P e P^-1 deterministicamente para conjugação
+	P := generateDeterministicInvertibleMatrix(seedHash[:], 1)
+	Pinv := generateDeterministicInvertibleMatrix(seedHash[:], 2)
+
+	// Conjugação: G = P × companion × P^-1
+	temp := mul(P, companion)
+	G := mul(temp, Pinv)
+
+	return G
+}
+
+// GenerateDeterministicPolynomial gera polinômio deterministicamente usando Lyra2RE2
+func generateDeterministicPolynomial(seed []byte) [degree]int {
+	var poly [degree]int
+
+	for i := 0; i < degree; i++ {
+		// Usar Lyra2RE2 para cada coeficiente
+		input := make([]byte, len(seed)+1)
+		copy(input, seed)
+		input[len(seed)] = byte(i)
+
+		hash, _ := lyra2re2.Sum(input)
+
+		// Usar hash para gerar coeficiente mod p
+		coefInt := new(big.Int).SetBytes(hash[:8])
+		coef := int(coefInt.Int64()) % p
+		if coef < 0 {
+			coef += p
+		}
+		poly[i] = coef
+	}
+
+	// Garantir que é mônico (coeficiente líder = 1)
+	poly[degree-1] = 1
+
+	return poly
+}
+
+// GenerateDeterministicInvertibleMatrix gera matriz invertível deterministicamente usando Lyra2RE2
+func generateDeterministicInvertibleMatrix(seed []byte, counter int) Matrix {
+	// Gerar seed para esta matriz específica
+	input := make([]byte, len(seed)+1)
+	copy(input, seed)
+	input[len(seed)] = byte(counter)
+	matrixSeed, _ := lyra2re2.Sum(input)
+
+	var L, U Matrix
+
+	// Gerar L (lower triangular) deterministicamente
+	for i := 0; i < 16; i++ {
+		// Diagonal com 1's
+		L[i][i] = 1
+		for j := 0; j < i; j++ {
+			// Input único para cada elemento
+			elemInput := make([]byte, len(matrixSeed)+3)
+			copy(elemInput, matrixSeed[:])
+			elemInput[len(matrixSeed)] = byte(i)
+			elemInput[len(matrixSeed)+1] = byte(j)
+			elemInput[len(matrixSeed)+2] = 'L'
+
+			hash, _ := lyra2re2.Sum(elemInput)
+
+			coefInt := new(big.Int).SetBytes(hash[:8])
+			coef := int(coefInt.Int64()) % p
+			if coef < 0 {
+				coef += p
+			}
+			L[i][j] = coef
+		}
+	}
+
+	// Gerar U (upper triangular) deterministicamente
+	for i := 0; i < 16; i++ {
+		for j := i; j < 16; j++ {
+			// Input único para cada elemento
+			elemInput := make([]byte, len(matrixSeed)+3)
+			copy(elemInput, matrixSeed[:])
+			elemInput[len(matrixSeed)] = byte(i)
+			elemInput[len(matrixSeed)+1] = byte(j)
+			elemInput[len(matrixSeed)+2] = 'U'
+
+			hash, _ := lyra2re2.Sum(elemInput)
+
+			coefInt := new(big.Int).SetBytes(hash[:8])
+			coef := int(coefInt.Int64()) % p
+			if coef < 0 {
+				coef += p
+			}
+
+			if i == j && coef == 0 {
+				coef = 1
+			}
+			U[i][j] = coef
+		}
+	}
+
+	return mul(L, U)
+}
+
+// Deriva chave privada determinística a partir de seed
+func derivePrivateKeyFromSeed(seed []byte) []byte {
+	if len(seed) == 0 {
+		// Fallback para aleatório se seed vazio
+		x := make([]byte, 32)
+		rand.Read(x)
+		return x
+	}
+	
+	// Hash do seed
+	digest, _ := lyra2re2.Sum(seed)
+		
+	// Retornar os primeiros 32 bytes (256 bits)
+	return digest[:32]
 }
 
 // =================================================
