@@ -790,18 +790,18 @@ func matrixToHex(m Matrix) string {
 	return hex.EncodeToString(matrixToBytes(m))
 }
 
-// Serialize ciphertext to ASN.1
+// Serializa ciphertext em ASN.1
 func serializeCiphertext(C1, C2 Matrix) ([]byte, error) {
-	ciphertext := Ciphertext{
+	ciphertext := CiphertextMatrixASN1{
 		C1: matrixToBytes(C1),
 		C2: matrixToBytes(C2),
 	}
 	return asn1.Marshal(ciphertext)
 }
 
-// Deserialize ciphertext from ASN.1
+// Desserializa ciphertext de ASN.1
 func deserializeCiphertext(data []byte) (Matrix, Matrix, error) {
-	var ciphertext Ciphertext
+	var ciphertext CiphertextMatrixASN1
 	_, err := asn1.Unmarshal(data, &ciphertext)
 	if err != nil {
 		return Matrix{}, Matrix{}, err
