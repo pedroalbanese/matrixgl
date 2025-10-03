@@ -1028,7 +1028,7 @@ func GenerateZKProof(G Matrix, xBytes []byte, message []byte) (Matrix, []byte, [
 	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
 	challengeData = append(challengeData, message...)
 
-	e := hashToScalarMatrix(challengeData)
+	e := hashToScalar(challengeData)
 	e.Mod(e, groupOrder)
 
 	// Step 4: Compute response s = k + x*e (mod order)
@@ -1064,7 +1064,7 @@ func VerifyZKProof(R Matrix, eBytes, sBytes []byte, G, Y Matrix, message []byte)
 	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
 	challengeData = append(challengeData, message...)
 
-	e := hashToScalarMatrix(challengeData)
+	e := hashToScalar(challengeData)
 	e.Mod(e, groupOrder)
 
 	// Convert to bytes for comparison
