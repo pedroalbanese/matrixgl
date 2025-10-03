@@ -3,6 +3,7 @@
 package matrixcrypto
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/subtle"
 	"crypto/sha512"
