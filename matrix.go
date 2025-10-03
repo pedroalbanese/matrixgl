@@ -315,6 +315,48 @@ func (mc *MatrixCrypto) Verify(pubKey *PublicKeyMatrixASN1, message []byte, sign
 }
 
 // =================================================
+// Prova de Conhecimento Zero
+// =================================================
+
+// GenerateZKProof gera uma prova de conhecimento zero para a chave privada
+func (mc *MatrixCrypto) GenerateProof(privKey *PrivateKeyMatrixASN1, message []byte) ([]byte, []byte, []byte, error) {
+	G, err := bytesToMatrix(privKey.G)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	M := hashMessageToMatrix(message)
+	msgMatrixBytes := matrixToBytes(M)
+
+	R, eBytes, sBytes := GenerateZKProof(G, privKey.X, msgMatrixBytes)
+
+	return matrixToBytes(R), eBytes, sBytes, nil
+}
+
+// VerifyZKProof verifica uma prova de conhecimento zero
+func (mc *MatrixCrypto) VerifyProof(pubKey *PublicKeyMatrixASN1, message []byte, commitment, challenge, response []byte) (bool, error) {
+	G, err := bytesToMatrix(pubKey.G)
+	if err != nil {
+		return false, err
+	}
+
+	Y, err := bytesToMatrix(pubKey.Y)
+	if err != nil {
+		return false, err
+	}
+
+	M := hashMessageToMatrix(message)
+	msgMatrixBytes := matrixToBytes(M)
+
+	R, err := bytesToMatrix(commitment)
+	if err != nil {
+		return false, err
+	}
+
+	return VerifyZKProof(R, challenge, response, G, Y, msgMatrixBytes), nil
+}
+
+// =================================================
 // Utilitários
 // =================================================
 
