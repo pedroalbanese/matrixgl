@@ -10,16 +10,12 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-	"io"
 	"math/big"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"golang.org/x/crypto/hkdf"
   
 	"github.com/pedroalbanese/lyra2rev2"
-	"github.com/pedroalbanese/randomart"
 )
 
 // =================================================
@@ -321,42 +317,84 @@ func (mc *MatrixCrypto) Verify(pubKey *PublicKeyMatrixASN1, message []byte, sign
 // Prova de Conhecimento Zero
 // =================================================
 
-// GenerateZKProof gera uma prova de conhecimento zero para a chave privada
-func (mc *MatrixCrypto) GenerateZKProof(privKey *PrivateKeyMatrixASN1, message []byte) ([]byte, []byte, []byte, error) {
-	G, err := bytesToMatrix(privKey.G)
-	if err != nil {
-		return nil, nil, nil, err
+// GenerateZKProof generates a zero-knowledge proof of knowledge of the private key x
+func GenerateZKProof(G Matrix, xBytes []byte, message []byte) (Matrix, []byte, []byte) {
+	groupOrder := glOrder(16, 251)
+
+	// Step 1: Generate random commitment k
+	k, _ := rand.Int(rand.Reader, groupOrder)
+
+	// Step 2: Compute commitment R = G^k
+	kBytes := k.Bytes()
+	if len(kBytes) < 32 {
+		padded := make([]byte, 32)
+		copy(padded[32-len(kBytes):], kBytes)
+		kBytes = padded
+	}
+	R := matExp(G, kBytes)
+
+	// Step 3: Generate challenge e = H(G, Y, R, message)
+	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
+	challengeData = append(challengeData, message...)
+
+	e := hashToScalarMatrix(challengeData)
+	e.Mod(e, groupOrder)
+
+	// Step 4: Compute response s = k + x*e (mod order)
+	x := new(big.Int).SetBytes(xBytes)
+	x.Mod(x, groupOrder)
+
+	s := new(big.Int).Mul(x, e)
+	s.Add(k, s)
+	s.Mod(s, groupOrder)
+
+	sBytes := s.Bytes()
+	if len(sBytes) < 32 {
+		padded := make([]byte, 32)
+		copy(padded[32-len(sBytes):], sBytes)
+		sBytes = padded
 	}
 
-	M := hashMessageToMatrix(message)
-	msgMatrixBytes := matrixToBytes(M)
+	eBytes := e.Bytes()
+	if len(eBytes) < 32 {
+		padded := make([]byte, 32)
+		copy(padded[32-len(eBytes):], eBytes)
+		eBytes = padded
+	}
 
-	R, eBytes, sBytes := GenerateZKProof(G, privKey.X, msgMatrixBytes)
-
-	return matrixToBytes(R), eBytes, sBytes, nil
+	return R, eBytes, sBytes
 }
 
-// VerifyZKProof verifica uma prova de conhecimento zero
-func (mc *MatrixCrypto) VerifyZKProof(pubKey *PublicKeyMatrixASN1, message []byte, commitment, challenge, response []byte) (bool, error) {
-	G, err := bytesToMatrix(pubKey.G)
-	if err != nil {
-		return false, err
+// VerifyZKProof verifies a zero-knowledge proof of knowledge
+func VerifyZKProof(R Matrix, eBytes, sBytes []byte, G, Y Matrix, message []byte) bool {
+	groupOrder := glOrder(16, 251)
+
+	// Step 1: Recompute challenge e = H(G, Y, R, message)
+	challengeData := append(matrixToBytes(G), matrixToBytes(R)...)
+	challengeData = append(challengeData, message...)
+
+	e := hashToScalarMatrix(challengeData)
+	e.Mod(e, groupOrder)
+
+	// Convert to bytes for comparison
+	computedEBytes := e.Bytes()
+	if len(computedEBytes) < 32 {
+		padded := make([]byte, 32)
+		copy(padded[32-len(computedEBytes):], computedEBytes)
+		computedEBytes = padded
 	}
 
-	Y, err := bytesToMatrix(pubKey.Y)
-	if err != nil {
-		return false, err
+	// Verify that the provided challenge matches the recomputed one
+	if !bytes.Equal(eBytes, computedEBytes) {
+		return false
 	}
 
-	M := hashMessageToMatrix(message)
-	msgMatrixBytes := matrixToBytes(M)
+	// Step 2: Verify the proof: G^s = R * Y^e
+	Gs := matExp(G, sBytes)
+	Ye := matExp(Y, eBytes)
+	rightSide := mul(R, Ye)
 
-	R, err := bytesToMatrix(commitment)
-	if err != nil {
-		return false, err
-	}
-
-	return VerifyZKProof(R, challenge, response, G, Y, msgMatrixBytes), nil
+	return matricesEqual(Gs, rightSide)
 }
 
 // =================================================
@@ -963,14 +1001,10 @@ func schnorrVerify(m, R Matrix, sBytes []byte, Y, G Matrix) bool {
 
 // Comparação de matrizes
 func matricesEqual(a, b Matrix) bool {
-	for i := 0; i < 16; i++ {
-		for j := 0; j < 16; j++ {
-			if a[i][j] != b[i][j] {
-				return false
-			}
-		}
-	}
-	return true
+	aBytes := matrixToBytes(a)
+	bBytes := matrixToBytes(b)
+    
+	return subtle.ConstantTimeCompare(aBytes, bBytes) == 1
 }
 
 func glOrder(n, q int64) *big.Int {
