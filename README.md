@@ -223,3 +223,19 @@ This matrix-based ZKP provides a robust and post-quantum secure method for provi
 | Signature size | 64 bytes | 512 bytes |
 | Quantum resistance | Vulnerable | Resistant |
 | Group structure | Abelian | Non-abelian |
+
+## Contribute
+**Use issues for everything**
+- You can help and get help by:
+  - Reporting doubts and questions
+- You can contribute by:
+  - Reporting issues
+  - Suggesting new features or enhancements
+  - Improve/fix documentation
+
+## License
+
+This project is licensed under the ISC License.
+
+#### Copyright (c) 2020-2025 Pedro F. Albanese - ALBANESE Research Lab.  
+Todos os direitos de propriedade intelectual sobre este software pertencem ao autor, Pedro F. Albanese. Vide Lei 9.610/98, Art. 7º, inciso XII.
