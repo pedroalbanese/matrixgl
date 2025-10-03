@@ -360,11 +360,6 @@ func (mc *MatrixCrypto) VerifyProof(pubKey *PublicKeyMatrixASN1, message []byte,
 // Utilitários
 // =================================================
 
-// CalculateFingerprint calcula a fingerprint de uma chave
-func (mc *MatrixCrypto) CalculateFingerprint(keyBytes []byte) string {
-	return calculateFingerprint(keyBytes)
-}
-
 // GenerateRandomMessage gera uma matriz de mensagem aleatória
 func (mc *MatrixCrypto) GenerateRandomMessage() Matrix {
 	return randomMessageMatrix()
