@@ -5,6 +5,7 @@ package matrixcrypto
 import (
 	"crypto/rand"
 	"crypto/subtle"
+	"crypto/sha512"
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/pem"
