@@ -660,16 +660,23 @@ func determinant(m Matrix) int {
 func matExp(base Matrix, exp []byte) Matrix {
 	result := identity()
 	current := base
-
 	expInt := new(big.Int).SetBytes(exp)
+	bitLen := expInt.BitLen()
 
-	for i := 0; i < expInt.BitLen(); i++ {
+	for i := 0; i < bitLen; i++ {
+		// SEMPRE calcular
+		temp := mul(result, current)
+
+		// SEMPRE atribuir (valor depende do bit)
 		if expInt.Bit(i) == 1 {
-			result = mul(result, current)
+			result = temp // Novo resultado
+		} else {
+			_ = temp // Dummy assignment (mesmo trabalho)
+			// result mantém seu valor
 		}
+
 		current = mul(current, current)
 	}
-
 	return result
 }
 
