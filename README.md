@@ -241,72 +241,73 @@ func main() {
 
 	mc := matrixcrypto.New()
 
-	// 1. Key Generation
-	fmt.Println("\n1. Generating key pair...")
+	// [1] Key Generation
+	fmt.Println("\n[1] Generating key pair...")
 	keyPair, err := mc.GenerateKeyPair()
 	if err != nil {
 		log.Fatal("Error generating key pair:", err)
 	}
-	fmt.Println("   Key pair generated successfully")
-	fmt.Printf("   Private key size: %d bytes\n", len(keyPair.PrivateKey.X))
-	fmt.Printf("   Public key G size: %d bytes\n", len(keyPair.PublicKey.G))
-	fmt.Printf("   Public key Y size: %d bytes\n", len(keyPair.PublicKey.Y))
+	fmt.Println("    Key pair generated successfully")
+	fmt.Printf("    Private key size: %d bytes\n", len(keyPair.PrivateKey.X))
+	fmt.Printf("    Public key G size: %d bytes\n", len(keyPair.PublicKey.G))
+	fmt.Printf("    Public key Y size: %d bytes\n", len(keyPair.PublicKey.Y))
 
-	// 2. Encryption
-	fmt.Println("\n2. Encrypting random message...")
+	// [2] Encryption
+	fmt.Println("\n[2] Encrypting random message...")
 	message := mc.GenerateRandomMessage()
-	fmt.Printf("   Original message hash: %s\n", mc.MatrixToHex(message)[:32]+"...")
+	fmt.Printf("    Original message hash: %s...\n", mc.MatrixToHex(message)[:32])
 
 	ciphertext, err := mc.Encrypt(keyPair.PublicKey, message)
 	if err != nil {
 		log.Fatal("Error encrypting message:", err)
 	}
-	fmt.Println("   Message encrypted successfully")
-	fmt.Printf("   Ciphertext C1 size: %d bytes\n", len(ciphertext.C1))
-	fmt.Printf("   Ciphertext C2 size: %d bytes\n", len(ciphertext.C2))
+	fmt.Println("    Message encrypted successfully")
+	fmt.Printf("    Ciphertext C1 size: %d bytes\n", len(ciphertext.C1))
+	fmt.Printf("    Ciphertext C2 size: %d bytes\n", len(ciphertext.C2))
 
-	fmt.Println("\n3. Performing cryptographic verifications...")
-
-	// Decryption verification
+	// [3] Decryption & Verification
+	fmt.Println("\n[3] Decrypting message and verifying integrity...")
 	decryptedMessage, err := mc.Decrypt(keyPair.PrivateKey, ciphertext)
 	if err != nil {
 		log.Fatal("Error decrypting message:", err)
 	}
 
 	encryptionOK := mc.MatrixToHex(message) == mc.MatrixToHex(decryptedMessage)
-	fmt.Printf("   Decryption verification: %t\n", encryptionOK)
-	fmt.Printf("   Decrypted message hash: %s\n", mc.MatrixToHex(decryptedMessage)[:32]+"...")
+	fmt.Printf("    Decryption verification: %t\n", encryptionOK)
+	fmt.Printf("    Decrypted message hash: %s...\n", mc.MatrixToHex(decryptedMessage)[:32])
 
-	// 4. Digital Signatures
-	fmt.Println("\n4. Signing confidential data...")
+	// [4] Digital Signatures
+	fmt.Println("\n[4] Signing confidential data...")
 	data := []byte("Confidential data to be signed digitally using matrix cryptography")
-	fmt.Printf("   Data to sign: %s\n", string(data))
-	fmt.Printf("   Data size: %d bytes\n", len(data))
+	fmt.Printf("    Data to sign: %s\n", string(data))
+	fmt.Printf("    Data size: %d bytes\n", len(data))
 
 	signature, err := mc.Sign(keyPair.PrivateKey, data)
 	if err != nil {
 		log.Fatal("Error signing data:", err)
 	}
-	fmt.Println("   Data signed successfully")
-	fmt.Printf("   Signature size: %d bytes\n", len(signature))
+	fmt.Println("    Data signed successfully")
+	fmt.Printf("    Signature size: %d bytes\n", len(signature))
 
-	// Signature verification
+	// [5] Signature Verification
+	fmt.Println("\n[5] Verifying digital signature...")
 	signatureOK, err := mc.Verify(keyPair.PublicKey, data, signature)
 	if err != nil {
 		log.Fatal("Error verifying signature:", err)
 	}
-	fmt.Printf("   Signature verification: %t\n", signatureOK)
+	fmt.Printf("    Signature verification: %t\n", signatureOK)
 
-	// 5. Additional security tests
-	fmt.Println("\n5. Running additional security tests...")
+	// [6] Additional Security Tests
+	fmt.Println("\n[6] Running additional security tests...")
 
-	// Test with wrong signature (should fail)
+	// Test with wrong data (should fail)
 	wrongData := []byte("Wrong data that should fail verification")
 	wrongSignatureOK, _ := mc.Verify(keyPair.PublicKey, wrongData, signature)
-	fmt.Printf("   Wrong data test (should be false): %t\n", wrongSignatureOK)
+	fmt.Printf("    Wrong data signature verification (should be false): %t\n", wrongSignatureOK)
 
-	// Test PEM serialization
-	fmt.Println("\n6. Testing PEM serialization...")
+	// [7] PEM Serialization
+	fmt.Println("\n[7] Testing PEM serialization...")
+
 	privPEM, err := mc.PrivateKeyToPEM(keyPair.PrivateKey)
 	if err != nil {
 		log.Fatal("Error serializing private key to PEM:", err)
@@ -317,30 +318,32 @@ func main() {
 		log.Fatal("Error serializing public key to PEM:", err)
 	}
 
-	fmt.Printf("   Private PEM size: %d bytes\n", len(privPEM))
-	fmt.Printf("   Public PEM size: %d bytes\n", len(pubPEM))
+	fmt.Println("    PEM serialization successful")
+	fmt.Printf("    Private PEM size: %d bytes\n", len(privPEM))
+	fmt.Printf("    Public PEM size: %d bytes\n", len(pubPEM))
 
-	// 7. Final results
-	fmt.Println("\n7. FINAL RESULTS:")
-	fmt.Printf("   Encryption/Decryption: %t\n", encryptionOK)
-	fmt.Printf("   Digital Signature: %t\n", signatureOK)
-	fmt.Printf("   Security Tests: %t\n", !wrongSignatureOK)
+	// [8] Final Results
+	fmt.Println("\n[8] FINAL RESULTS:")
+	fmt.Printf("    Encryption/Decryption: %t\n", encryptionOK)
+	fmt.Printf("    Digital Signature: %t\n", signatureOK)
+	fmt.Printf("    Security Tests (wrong data check): %t\n", !wrongSignatureOK)
 
 	if encryptionOK && signatureOK && !wrongSignatureOK {
-		fmt.Println("\nALL TESTS PASSED SUCCESSFULLY!")
+		fmt.Println("\nALL TESTS PASSED SUCCESSFULLY")
 		fmt.Println("Matrix cryptography library is working correctly.")
 	} else {
-		fmt.Println("\nSOME TESTS FAILED!")
+		fmt.Println("\nSOME TESTS FAILED")
 	}
 
-	fmt.Printf("\nLibrary implementation: Matrix GL(16, F251)\n")
-	fmt.Printf("Private key space: 2^256 possible keys\n")
-	fmt.Printf("Matrix operations: Over finite field F251\n")
+	fmt.Println("\nIMPLEMENTATION DETAILS:")
+	fmt.Println("    Library: Matrix GL(16, F251)")
+	fmt.Println("    Private key space: 2^256 possible keys")
+	fmt.Println("    Matrix operations: Over finite field F251")
 }
 ```
 
 Go Playground:
-https://go.dev/play/p/gujGhtCKv6N
+https://go.dev/play/p/vRY0S4Y_0ku
 
 ## Contribute
 **Use issues for everything**
