@@ -265,21 +265,7 @@ func main() {
 	fmt.Printf("   Ciphertext C1 size: %d bytes\n", len(ciphertext.C1))
 	fmt.Printf("   Ciphertext C2 size: %d bytes\n", len(ciphertext.C2))
 
-	// 3. Digital Signatures
-	fmt.Println("\n3. Signing confidential data...")
-	data := []byte("Confidential data to be signed digitally using matrix cryptography")
-	fmt.Printf("   Data to sign: %s\n", string(data))
-	fmt.Printf("   Data size: %d bytes\n", len(data))
-
-	signature, err := mc.Sign(keyPair.PrivateKey, data)
-	if err != nil {
-		log.Fatal("Error signing data:", err)
-	}
-	fmt.Println("   Data signed successfully")
-	fmt.Printf("   Signature size: %d bytes\n", len(signature))
-
-	// 4. Verifications
-	fmt.Println("\n4. Performing cryptographic verifications...")
+	fmt.Println("\n3. Performing cryptographic verifications...")
 
 	// Decryption verification
 	decryptedMessage, err := mc.Decrypt(keyPair.PrivateKey, ciphertext)
@@ -291,6 +277,19 @@ func main() {
 	fmt.Printf("   Decryption verification: %t\n", encryptionOK)
 	fmt.Printf("   Decrypted message hash: %s\n", mc.MatrixToHex(decryptedMessage)[:32]+"...")
 
+	// 3. Digital Signatures
+	fmt.Println("\n4. Signing confidential data...")
+	data := []byte("Confidential data to be signed digitally using matrix cryptography")
+	fmt.Printf("   Data to sign: %s\n", string(data))
+	fmt.Printf("   Data size: %d bytes\n", len(data))
+
+	signature, err := mc.Sign(keyPair.PrivateKey, data)
+	if err != nil {
+		log.Fatal("Error signing data:", err)
+	}
+	fmt.Println("   Data signed successfully")
+	fmt.Printf("   Signature size: %d bytes\n", len(signature))
+
 	// Signature verification
 	signatureOK, err := mc.Verify(keyPair.PublicKey, data, signature)
 	if err != nil {
@@ -298,7 +297,7 @@ func main() {
 	}
 	fmt.Printf("   Signature verification: %t\n", signatureOK)
 
-	// 5. Additional security tests
+	// 4. Additional security tests
 	fmt.Println("\n5. Running additional security tests...")
 
 	// Test with wrong signature (should fail)
@@ -341,7 +340,7 @@ func main() {
 ```
 
 Go Playground:
-https://go.dev/play/p/egPrTzoTTiQ
+[https://go.dev/play/p/egPrTzoTTiQ](https://go.dev/play/p/gya93ngpjpM)
 
 ## Contribute
 **Use issues for everything**
