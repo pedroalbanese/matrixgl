@@ -277,7 +277,7 @@ func main() {
 	fmt.Printf("   Decryption verification: %t\n", encryptionOK)
 	fmt.Printf("   Decrypted message hash: %s\n", mc.MatrixToHex(decryptedMessage)[:32]+"...")
 
-	// 3. Digital Signatures
+	// 4. Digital Signatures
 	fmt.Println("\n4. Signing confidential data...")
 	data := []byte("Confidential data to be signed digitally using matrix cryptography")
 	fmt.Printf("   Data to sign: %s\n", string(data))
@@ -297,7 +297,7 @@ func main() {
 	}
 	fmt.Printf("   Signature verification: %t\n", signatureOK)
 
-	// 4. Additional security tests
+	// 5. Additional security tests
 	fmt.Println("\n5. Running additional security tests...")
 
 	// Test with wrong signature (should fail)
@@ -340,7 +340,7 @@ func main() {
 ```
 
 Go Playground:
-[https://go.dev/play/p/egPrTzoTTiQ](https://go.dev/play/p/gya93ngpjpM)
+https://go.dev/play/p/gujGhtCKv6N
 
 ## Contribute
 **Use issues for everything**
